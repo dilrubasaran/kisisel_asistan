@@ -1,3 +1,4 @@
+import edge_tts
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 from gtts import gTTS
@@ -28,9 +29,9 @@ async def sesli_mesaj(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Gönderilecek metni belirle
         text = "Merhaba! Bu ilk sesli mesajım. Şu an neyle meşgulsün?"
         
-        # Metni ses dosyasına çevir (Türkçe)
-        tts = gTTS(text, lang='tr')
-        tts.save("mesaj.mp3")
+        # Metni ses dosyasına çevir (Edge TTS ile)
+        communicate = edge_tts.Communicate(text, voice="tr-TR-EmelNeural")  # Erkek sesi
+        await communicate.save("mesaj.mp3")
         
         # MP3'ü OGG formatına çevir (Telegram ses formatı)
         ses = AudioSegment.from_mp3("mesaj.mp3")
@@ -123,8 +124,9 @@ async def sesli_yanit(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # LM cevabını sesli mesaja çevirip Telegram'a gönder
 async def yaniti_sesle_gonder(update, text):
     try:
-        tts = gTTS(text=text, lang="tr")
-        tts.save("cevap.mp3")
+        communicate = edge_tts.Communicate(text, voice="tr-TR-EmelNeural")  # Erkek sesi
+        await communicate.save("cevap.mp3")
+
         ses = AudioSegment.from_mp3("cevap.mp3")
         ses.export("cevap.ogg", format="ogg", codec="libopus")
 
@@ -136,7 +138,6 @@ async def yaniti_sesle_gonder(update, text):
     except Exception as e:
         logging.error(f"Yanıtı sese çevirme hatası: {e}")
         await update.message.reply_text("Sesli yanıt oluşturulamadı.")
-
 # 4️ Bot Başlat
 if __name__ == "__main__":
     # Bot uygulamasını oluştur

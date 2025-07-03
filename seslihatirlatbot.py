@@ -41,7 +41,10 @@ async def mesaj(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_input = update.message.text
         
         # Kullanıcının mesajını kaydet
-        await yaniti_excel_kaydet(await calculate_timestamp(), user_input, "Kullanıcı Mesajı")
+        await log_kaydi_ekle(await calculate_timestamp(), "Kullanıcı", "Mesaj", user_input)
+        
+        # Analiz mesajı kontrolü ve kayıt
+        await mesaj_analiz_ayikla_ve_kaydet(user_input)
         
         payload = {
             "model": LMSTUDIO_MODEL_NAME,
@@ -56,7 +59,7 @@ async def mesaj(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(cevap)
         
         # Bot yanıtını kaydet
-        await yaniti_excel_kaydet(await calculate_timestamp(), cevap, "Bot Yanıtı")
+        await log_kaydi_ekle(await calculate_timestamp(), "Bot", "Yanıt", cevap)
         
     except Exception as e:
         logging.error(f"Mesaj gönderim hatası: {e}")
@@ -75,7 +78,7 @@ async def sesli_yanit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         metin = result["text"]
         
         # Kullanıcının sesli mesajını kaydet
-        await yaniti_excel_kaydet(await calculate_timestamp(), f"[Sesli] {metin}", "Kullanıcı Mesajı")
+        await log_kaydi_ekle(await calculate_timestamp(), "Kullanıcı", "Sesli Mesaj", f"[Sesli] {metin}")
         
         await update.message.reply_text(f"📄 Yazıya çevrildi:\n{metin}")
         payload = {
@@ -91,7 +94,7 @@ async def sesli_yanit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await yaniti_sesle_gonder(update, yanit)
         
         # Bot yanıtını kaydet
-        await yaniti_excel_kaydet(await calculate_timestamp(), yanit, "Bot Yanıtı")
+        await log_kaydi_ekle(await calculate_timestamp(), "Bot", "Yanıt", yanit)
         
         os.remove("input.ogg")
         os.remove("input.mp3")
@@ -130,7 +133,7 @@ async def hatirlatma_gonder():
             await app.bot.send_voice(chat_id=USER_CHAT_ID, voice=voice_file)
         
         # Hatırlatma gönderimini kaydet
-        await yaniti_excel_kaydet(await calculate_timestamp(), "Hatırlatma sesli gönderildi", "Hatırlatma")
+        await log_kaydi_ekle(await calculate_timestamp(), "Bot", "Hatırlatma", "Hatırlatma sesli gönderildi")
         
         os.remove("hatirlatma.mp3")
         os.remove("hatirlatma.ogg")
@@ -154,17 +157,48 @@ async def scheduler_init(application):
         print("✅ Zamanlayıcı başlatıldı!")
 
 # 📊 Excel'e kaydetme fonksiyonları
+def zaman_al():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 async def calculate_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-async def yaniti_excel_kaydet(zaman, icerik, tur):
-    dosya = "yanitlar.xlsx"
-    df = pd.DataFrame([[zaman, tur, icerik]], columns=["Zaman", "Tür", "Mesaj"])
+async def mesaj_analiz_ayikla_ve_kaydet(user_text: str):
+    if "/" in user_text:
+        kategori, aciklama = [k.strip() for k in user_text.split("/", 1)]
+        await analiz_kaydi_ekle(
+            zaman=zaman_al(),
+            kategori=kategori,
+            alt_baslik="",  # daha sonra AI ile çıkarılabilir
+            aciklama=aciklama,
+            sure=None  # sonra eklenecek
+        )
+
+async def log_kaydi_ekle(zaman: str, kaynak: str, mesaj_turu: str, icerik: str):
+    dosya = "log_kayitlari.xlsx"
+    yeni_kayit = pd.DataFrame([[zaman, kaynak, mesaj_turu, icerik]], 
+                               columns=["Zaman", "Kaynak", "Mesaj Türü", "İçerik"])
+    
     if os.path.exists(dosya):
-        df_old = pd.read_excel(dosya)
-        df = pd.concat([df_old, df], ignore_index=True)
-    df.sort_values("Zaman", inplace=True)  # Kronolojik sıraya sok
-    df.to_excel(dosya, index=False)
+        eski_kayitlar = pd.read_excel(dosya)
+        tum_kayitlar = pd.concat([eski_kayitlar, yeni_kayit], ignore_index=True)
+    else:
+        tum_kayitlar = yeni_kayit
+
+    tum_kayitlar.to_excel(dosya, index=False)
+
+async def analiz_kaydi_ekle(zaman: str, kategori: str, alt_baslik: str, aciklama: str, sure: int = None):
+    dosya = "analiz_verisi.xlsx"
+    yeni_kayit = pd.DataFrame([[zaman, kategori, alt_baslik, aciklama, sure]], 
+                               columns=["Zaman", "Kategori", "Alt Başlık", "Açıklama", "Süre (dk)"])
+    
+    if os.path.exists(dosya):
+        eski_kayitlar = pd.read_excel(dosya)
+        tum_kayitlar = pd.concat([eski_kayitlar, yeni_kayit], ignore_index=True)
+    else:
+        tum_kayitlar = yeni_kayit
+
+    tum_kayitlar.to_excel(dosya, index=False)
 
 # 🚀 Bot başlatma
 if __name__ == "__main__":

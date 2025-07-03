@@ -1,0 +1,36 @@
+# Excel dosyaları
+*.xlsx
+*.xls
+
+# Python cache dosyaları
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Sanal ortam
+venv/
+env/
+ENV/
+
+# IDE dosyaları
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ses dosyaları (geçici)
+*.mp3
+*.ogg
+*.wav
+
+# Log dosyaları
+*.log
+
+# Sistem dosyaları
+.DS_Store
+Thumbs.db
+
+# Kişisel dosyalar
+config.py
+.env 

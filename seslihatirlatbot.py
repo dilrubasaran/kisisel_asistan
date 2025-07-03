@@ -43,8 +43,11 @@ async def mesaj(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Kullanıcının mesajını kaydet
         await log_kaydi_ekle(await calculate_timestamp(), "Kullanıcı", "Mesaj", user_input)
         
-        # Analiz mesajı kontrolü ve kayıt
-        await mesaj_analiz_ayikla_ve_kaydet(user_input)
+        # Analiz mesajı kontrolü ve kayıt (hata olursa devam et)
+        try:
+            await mesaj_analiz_ayikla_ve_kaydet(user_input)
+        except Exception as analiz_hatasi:
+            logging.warning(f"Analiz kaydında hata (devam ediliyor): {analiz_hatasi}")
         
         payload = {
             "model": LMSTUDIO_MODEL_NAME,
@@ -53,6 +56,7 @@ async def mesaj(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 {"role": "user", "content": user_input}
             ]
         }
+        
         response = requests.post(LMSTUDIO_API_URL, json=payload)
         response_data = response.json()
         cevap = response_data["choices"][0]["message"]["content"]
@@ -163,16 +167,31 @@ def zaman_al():
 async def calculate_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-async def mesaj_analiz_ayikla_ve_kaydet(user_text: str):
-    if "/" in user_text:
-        kategori, aciklama = [k.strip() for k in user_text.split("/", 1)]
-        await analiz_kaydi_ekle(
-            zaman=zaman_al(),
-            kategori=kategori,
-            alt_baslik="",  # daha sonra AI ile çıkarılabilir
-            aciklama=aciklama,
-            sure=None  # sonra eklenecek
-        )
+async def mesaj_analiz_ayikla_ve_kaydet(mesaj: str):
+    zaman = await calculate_timestamp()
+    sure = 30  # Sabit 30 dk
+
+    if "/" in mesaj:  # En az 1 ayırıcı varsa
+        parcalar = [p.strip() for p in mesaj.split("/")]
+        
+        if len(parcalar) >= 3:  # 3 parça: kategori/alt_baslik/aciklama
+            kategori = parcalar[0]
+            alt_baslik = parcalar[1]
+            aciklama = parcalar[2]
+        elif len(parcalar) == 2:  # 2 parça: kategori/aciklama
+            kategori = parcalar[0]
+            alt_baslik = "Genel"
+            aciklama = parcalar[1]
+        else:  # 1 parça: sadece kategori
+            kategori = parcalar[0]
+            alt_baslik = "Genel"
+            aciklama = "Belirtilmemiş"
+    else:
+        # Hiç "/" yok, analiz yapma
+        return
+
+    await analiz_kaydi_ekle(zaman, kategori, alt_baslik, aciklama, sure)
+    logging.info(f"Analiz kaydı eklendi: {kategori} / {alt_baslik} / {aciklama}")
 
 async def log_kaydi_ekle(zaman: str, kaynak: str, mesaj_turu: str, icerik: str):
     dosya = "log_kayitlari.xlsx"

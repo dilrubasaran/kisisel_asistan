@@ -1,0 +1,21 @@
+# Telegram Bot
+python-telegram-bot
+
+# Ses işleme
+edge-tts
+pydub
+whisper
+openai-whisper
+
+# HTTP istekleri
+requests
+
+# Zamanlayıcı
+APScheduler
+
+# Veri işleme
+pandas
+openpyxl
+
+# Logging
+logging 

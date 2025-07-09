@@ -8,18 +8,41 @@ import os, logging, whisper, requests
 import asyncio
 
 from config import (
-    LMSTUDIO_MODEL_NAME, LMSTUDIO_API_URL, VOICE_NAME, FFMPEG_PATH
+    LMSTUDIO_MODEL_NAME, LMSTUDIO_API_URL, VOICE_NAME, FFMPEG_PATH, AI_SERVICE
 )
 from kayıt.logger import log_kaydi_ekle, mesaj_analiz_ayikla_ve_kaydet
 from kayıt.zaman import calculate_timestamp
+from ai.gemini import gemini_chat_with_system
 
 # AudioSegment ayarı
 AudioSegment.converter = FFMPEG_PATH
 
+def get_ai_response(system_message: str, user_message: str) -> str:
+    """AI servisinden yanıt alır (LM Studio veya Gemini)"""
+    try:
+        if AI_SERVICE == "gemini":
+            # Gemini kullan
+            return gemini_chat_with_system(system_message, user_message)
+        else:
+            # LM Studio kullan (varsayılan)
+            payload = {
+                "model": LMSTUDIO_MODEL_NAME,
+                "messages": [
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": user_message}
+                ]
+            }
+            response = requests.post(LMSTUDIO_API_URL, json=payload)
+            response_data = response.json()
+            return response_data["choices"][0]["message"]["content"]
+    except Exception as e:
+        logging.error(f"AI yanıt hatası ({AI_SERVICE}): {e}")
+        return f"⚠️ {AI_SERVICE.title()} servisinden cevap alınamadı."
+
 # 🎤 /sesli komutu
 async def sesli_mesaj(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        text = "Merhaba! Bu ilk sesli mesajım. Şu an neyle meşgulsün?"
+        text = f"Merhaba! Bu ilk sesli mesajım. Şu an neyle meşgulsün? (AI: {AI_SERVICE.title()})"
         communicate = edge_tts.Communicate(text, voice=VOICE_NAME)
         await communicate.save("mesaj.mp3")
         ses = AudioSegment.from_mp3("mesaj.mp3")
@@ -45,21 +68,14 @@ async def mesaj(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as analiz_hatasi:
             logging.warning(f"Analiz kaydında hata (devam ediliyor): {analiz_hatasi}")
         
-        payload = {
-            "model": LMSTUDIO_MODEL_NAME,
-            "messages": [
-                {"role": "system", "content": "Sen kullanıcıya dostça yardımcı olan bir kişisel asistansın."},
-                {"role": "user", "content": user_input}
-            ]
-        }
+        # AI servisinden yanıt al
+        system_message = "Sen kullanıcıya dostça yardımcı olan bir kişisel asistansın."
+        cevap = get_ai_response(system_message, user_input)
         
-        response = requests.post(LMSTUDIO_API_URL, json=payload)
-        response_data = response.json()
-        cevap = response_data["choices"][0]["message"]["content"]
         await update.message.reply_text(cevap)
         
         # Bot yanıtını kaydet
-        await log_kaydi_ekle(await calculate_timestamp(), "Bot", "Yanıt", cevap)
+        await log_kaydi_ekle(await calculate_timestamp(), "Bot", f"Yanıt ({AI_SERVICE.title()})", cevap)
         
     except Exception as e:
         logging.error(f"Mesaj gönderim hatası: {e}")
@@ -82,20 +98,15 @@ async def sesli_yanit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await update.message.reply_text(f"📄 Yazıya çevrildi:\n{metin}")
         
-        payload = {
-            "model": LMSTUDIO_MODEL_NAME,
-            "messages": [
-                {"role": "system", "content": "Sen dostça yardımcı olan bir asistansın."},
-                {"role": "user", "content": metin}
-            ]
-        }
-        response = requests.post(LMSTUDIO_API_URL, json=payload)
-        yanit = response.json()["choices"][0]["message"]["content"]
-        await update.message.reply_text(f"🤖 Cevap:\n{yanit}")
+        # AI servisinden yanıt al
+        system_message = "Sen dostça yardımcı olan bir asistansın."
+        yanit = get_ai_response(system_message, metin)
+        
+        await update.message.reply_text(f"🤖 Cevap ({AI_SERVICE.title()}):\n{yanit}")
         await yaniti_sesle_gonder(update, yanit)
         
         # Bot yanıtını kaydet
-        await log_kaydi_ekle(await calculate_timestamp(), "Bot", "Yanıt", yanit)
+        await log_kaydi_ekle(await calculate_timestamp(), "Bot", f"Yanıt ({AI_SERVICE.title()})", yanit)
         
         os.remove("input.ogg")
         os.remove("input.mp3")

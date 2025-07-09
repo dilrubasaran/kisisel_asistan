@@ -5,9 +5,16 @@
 BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # @BotFather'dan alacağınız token
 USER_CHAT_ID = 123456789  # Telegram kullanıcı ID'niz
 
+# AI Servisi Seçimi ("lmstudio" veya "gemini")
+AI_SERVICE = "gemini"  # Hangi AI servisini kullanacağınızı seçin
+
 # LM Studio ayarları
 LMSTUDIO_MODEL_NAME = "openhermes-2.5-mistral-7b"  # Kullandığınız model adı
 LMSTUDIO_API_URL = "http://127.0.0.1:1234/v1/chat/completions"  # LM Studio API URL
+
+# Gemini AI ayarları
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"  # Google AI Studio'dan alacağınız API key
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
 # Ses ayarları
 VOICE_NAME = "tr-TR-EmelNeural"  # Microsoft Edge TTS ses modeli

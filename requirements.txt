@@ -1,21 +1,13 @@
-# Telegram Bot
 python-telegram-bot
-
-# Ses işleme
+requests
 edge-tts
 pydub
 whisper
-openai-whisper
-
-# HTTP istekleri
-requests
-
-# Zamanlayıcı
-APScheduler
-
-# Veri işleme
+openai
 pandas
 openpyxl
-
-# Logging
-logging 
+matplotlib
+fpdf2
+APScheduler
+google-generativeai
+psutil 

@@ -4,11 +4,14 @@ import pandas as pd
 import os
 import logging
 from .zaman import calculate_timestamp
-from config import LOG_FILE, ANALYSIS_FILE, DEFAULT_DURATION_MINUTES
+from config.config import LOG_FILE, ANALYSIS_FILE, DEFAULT_DURATION_MINUTES
 
 async def log_kaydi_ekle(zaman: str, kaynak: str, mesaj_turu: str, icerik: str):
     """Genel log kaydı ekler"""
+    # Data/logs klasörü oluştur
+    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
     dosya = LOG_FILE
+    
     yeni_kayit = pd.DataFrame([[zaman, kaynak, mesaj_turu, icerik]], 
                                columns=["Zaman", "Kaynak", "Mesaj Türü", "İçerik"])
     
@@ -20,19 +23,22 @@ async def log_kaydi_ekle(zaman: str, kaynak: str, mesaj_turu: str, icerik: str):
 
     tum_kayitlar.to_excel(dosya, index=False)
 
-async def analiz_kaydi_ekle(zaman: str, kategori: str, alt_baslik: str, aciklama: str, sure: int = None):
+async def analiz_kaydi_ekle(zaman: str, kategori: str, alt_baslik: str, aciklama: str, sure: int):
     """Analiz verisi kaydı ekler"""
+    # Data/logs klasörü oluştur
+    os.makedirs(os.path.dirname(ANALYSIS_FILE), exist_ok=True)
     dosya = ANALYSIS_FILE
-    yeni_kayit = pd.DataFrame([[zaman, kategori, alt_baslik, aciklama, sure]], 
+    
+    yeni_analiz = pd.DataFrame([[zaman, kategori, alt_baslik, aciklama, sure]], 
                                columns=["Zaman", "Kategori", "Alt Başlık", "Açıklama", "Süre (dk)"])
     
     if os.path.exists(dosya):
-        eski_kayitlar = pd.read_excel(dosya)
-        tum_kayitlar = pd.concat([eski_kayitlar, yeni_kayit], ignore_index=True)
+        eski_analizler = pd.read_excel(dosya)
+        tum_analizler = pd.concat([eski_analizler, yeni_analiz], ignore_index=True)
     else:
-        tum_kayitlar = yeni_kayit
+        tum_analizler = yeni_analiz
 
-    tum_kayitlar.to_excel(dosya, index=False)
+    tum_analizler.to_excel(dosya, index=False)
 
 async def mesaj_analiz_ayikla_ve_kaydet(mesaj: str):
     """Mesajı analiz edip kategorize ederek kaydeder"""

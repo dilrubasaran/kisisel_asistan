@@ -28,8 +28,8 @@ REMINDER_END_HOUR = 20   # Hatırlatma bitiş saati
 REMINDER_INTERVAL_MINUTES = 30  # Hatırlatma aralığı (dakika)
 
 # Excel dosya adları
-LOG_FILE = "log_kayitlari.xlsx"
-ANALYSIS_FILE = "analiz_verisi.xlsx"
+LOG_FILE = "data/logs/log_kayitlari.xlsx"
+ANALYSIS_FILE = "data/logs/analiz_verisi.xlsx"
 
 # Analiz ayarları
 DEFAULT_DURATION_MINUTES = 30  # Varsayılan aktivite süresi (dakika) 

@@ -2,6 +2,9 @@
 *.xlsx
 *.xls
 
+#pdf dosyaları
+*.pdf
+
 # Python cache dosyaları
 __pycache__/
 *.py[cod]

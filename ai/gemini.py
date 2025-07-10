@@ -4,6 +4,13 @@ import requests
 import logging
 from config import GEMINI_API_KEY, GEMINI_API_URL
 
+SYSTEM_INSTRUCTION = (
+    "Sen kısa ve öz cevaplar veren kişisel asistansın. "
+    "Kullanıcı '/Kategori/Proje/Açıklama' formatında mesaj atarsa: "
+    "1) Anlayışla karşıla 2) O konuda 2-3 pratik öneri ver. "
+    "Normal mesajlarda asistan gibi davran. KISA yanıtlar ver."
+)
+
 def gemini_api_chat(prompt: str) -> str:
     """Gemini API ile sohbet fonksiyonu"""
     headers = {
@@ -13,12 +20,12 @@ def gemini_api_chat(prompt: str) -> str:
     params = {
         "key": GEMINI_API_KEY
     }
-
     data = {
+        "systemInstruction": {
+            "parts": [{"text": SYSTEM_INSTRUCTION}]
+        },
         "contents": [
-            {
-                "parts": [{"text": prompt}]
-            }
+            {"parts": [{"text": prompt}]}
         ]
     }
 

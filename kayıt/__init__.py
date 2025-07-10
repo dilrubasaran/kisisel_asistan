@@ -1,1 +1,1 @@
-# Kayıt modülü 
+# Kayıt package 
